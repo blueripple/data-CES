@@ -128,7 +128,7 @@ ccesRowGen2016AllCols = (FS.rowGen ces2016CSV) { FS.tablePrefix = "CES"
                                                }
 
 dataDir :: FilePath
-dataDir = fromMaybe "../bigData/CCES/" $ fmap toString $ $$(Env.envQ "BR_CES_DATA_DIR") >>= BRC.insureFinalSlash . toText
+dataDir = fromMaybe "../bigData/CCES/" $ fmap toString $ ($$(Env.envQ "BR_CES_DATA_DIR") :: Maybe Text) >>= BRC.insureFinalSlash . toText
 
 ces2016CSV :: FilePath
 ces2016CSV = dataDir ++ "CCES16_Common_OUTPUT_Feb2018_VV.tab"

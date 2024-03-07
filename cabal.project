@@ -29,7 +29,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/blueripple/small-data-sets
-  tag: 63d7c4802cd36ac57ae27600e7621352ac2f1591
+  tag: 9f872c680b1c07b6724260024c11d162df19bbb0
 
 source-repository-package
   type: git
