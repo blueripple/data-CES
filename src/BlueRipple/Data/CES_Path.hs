@@ -9,6 +9,7 @@ module BlueRipple.Data.CES_Path
   )
 where
 
+import qualified BlueRipple.Data.CachingCore as BRC
 import qualified Frames.Streamly.TH                     as FS
 import qualified Frames.Streamly.ColumnUniverse         as FCU
 import qualified Language.Haskell.TH.Env as Env
@@ -127,7 +128,7 @@ ccesRowGen2016AllCols = (FS.rowGen ces2016CSV) { FS.tablePrefix = "CES"
                                                }
 
 dataDir :: FilePath
-dataDir = fromMaybe "../bigData/CCES/" $$(Env.envQ "BR_CES_DATA_DIR")
+dataDir = fromMaybe "../bigData/CCES/" $ fmap toString $ $$(Env.envQ "BR_CES_DATA_DIR") >>= BRC.insureFinalSlash . toText
 
 ces2016CSV :: FilePath
 ces2016CSV = dataDir ++ "CCES16_Common_OUTPUT_Feb2018_VV.tab"
