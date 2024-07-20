@@ -21,6 +21,7 @@ library
   other-modules:  BlueRipple.Data.CES_Frame, BlueRipple.Data.CES_Path
   hs-source-dirs: src
   ghc-options: -Wall
+  default-extensions: StrictData
   build-depends:
         blueripple-data-loading
       , blueripple-data-tools

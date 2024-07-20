@@ -65,8 +65,10 @@ type MPresVoteParty = "PresVote" F.:-> MT.MaybeData ET.PartyT
 type CES = F.Record CESR
 type CESR = [BR.Year
             , CESCaseId
-            , CESWeight
---            , CESRegisteredWeight
+            , CESPreWeight
+            , CESPostWeight
+            , CESVVPreWeight
+            , CESVVPostWeight
             , GT.StateAbbreviation
             , GT.CongressionalDistrict
             , DT.Age5C
@@ -221,7 +223,8 @@ addStateAbbreviations stateXWalk allButStateAbbrevs = do
     $ K.knitError $ "Missing state FIPS when joining CES2020 data with state crosswalk: " <> show missingStateFIPS
   return $ fmap F.rcast withStateAbbreviations
 
-fixCES :: (F.ElemOf rs CESWeight
+fixCES :: (F.ElemOf rs CESPreWeight
+          , F.ElemOf rs CESPostWeight
 --          , F.ElemOf rs CESRegisteredWeight
           , F.ElemOf rs CESHispanic
           , F.ElemOf rs CESPewBornagain
@@ -234,7 +237,8 @@ fixCES :: (F.ElemOf rs CESWeight
        => F.Rec (Maybe F.:. F.ElField) rs
        -> F.Rec (Maybe F.:. F.ElField) (FixHouseVote rs)
 fixCES r = fixHouseVote
-           $ (F.rsubset %~ missingWeight)
+           $ (F.rsubset %~ missingPreWeight)
+           $ (F.rsubset %~ missingPostWeight)
 --           $ (F.rsubset %~ missingRegWeight)
            $ (F.rsubset %~ missingHispanicToNo)
            $ (F.rsubset %~ missingEvangelicalToNo)
@@ -332,8 +336,10 @@ transformCESTargetSmart = (FT.addOneFromOne @CESVVoterStatus @VRegistrationC tsI
 type MCESHouseVote = "HouseVoteInt" F.:-> MT.MaybeData Int
 type MCESPresVote = "PresVoteInt" F.:-> MT.MaybeData Int
 
-missingWeight :: F.Rec (Maybe :. F.ElField) '[CESWeight] -> F.Rec (Maybe :. F.ElField) '[CESWeight]
-missingWeight = FM.fromMaybeMono 0
+missingPreWeight :: F.Rec (Maybe :. F.ElField) '[CESPreWeight] -> F.Rec (Maybe :. F.ElField) '[CESPreWeight]
+missingPreWeight = FM.fromMaybeMono 0
+missingPostWeight :: F.Rec (Maybe :. F.ElField) '[CESPostWeight] -> F.Rec (Maybe :. F.ElField) '[CESPostWeight]
+missingPostWeight = FM.fromMaybeMono 0
 --missingRegWeight :: F.Rec (Maybe :. F.ElField) '[CESRegisteredWeight] -> F.Rec (Maybe :. F.ElField) '[CESRegisteredWeight]
 --missingRegWeight = FM.fromMaybeMono 0
 missingHispanicToNo :: F.Rec (Maybe :. F.ElField) '[CESHispanic] -> F.Rec (Maybe :. F.ElField) '[CESHispanic]
@@ -533,6 +539,10 @@ parseRegParty "Green" = RP_Green
 parseRegParty "Independent" = RP_Independent
 parseRegParty "Libertarian" = RP_Libertarian
 parseRegParty _ = RP_Other
+
+type RegParty = "RegParty" F.:-> RegPartyT
+instance FV.ToVLDataValue (F.ElField RegParty) where
+  toVLDataValue x = (toText $ V.getLabel x, GV.Str $ show $ V.getField x)
 
 data TurnoutT = T_Voted
               | T_NoRecord

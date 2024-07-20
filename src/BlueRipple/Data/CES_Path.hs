@@ -77,11 +77,18 @@ colsAndRenames CES2016 = f $ baseColsAndRenames CES2016 where
   f = unRenameHeader (FS.HeaderText "caseid") (FS.HeaderText "V101") .
       unRenameHeader (FS.HeaderText "CL_voter_status") (FS.HeaderText "CL_voterstatus") .
       unRenameHeader (FS.HeaderText "commonpostweight") (FS.HeaderText "commonweight_post") .
+      unRenameHeader (FS.HeaderText "vvweight_post") (FS.HeaderText "commonweight_vv_post") .
+      unRenameHeader (FS.HeaderText "vvweight") (FS.HeaderText "commonweight_vv") .
       unRenameHeader (FS.HeaderText "CL_2016gvm") (FS.HeaderText "CL_E2016GVM")
 colsAndRenames CES2018 = baseColsAndRenames CES2018
 colsAndRenames CES2020 = baseColsAndRenames CES2020
 colsAndRenames CES2022 = f $ baseColsAndRenames CES2022 where
   f = unRenameHeader (FS.HeaderText "gender") (FS.HeaderText "gender4")
+
+
+setOrMissingVVWeights :: FS.RowGen s FS.ColumnByName a -> FS.RowGen s FS.ColumnByName a
+setOrMissingVVWeights = FS.setOrMissingWhen (FS.HeaderText "vvweight") FS.AlwaysPossible
+                        . FS.setOrMissingWhen (FS.HeaderText "vvweight") FS.AlwaysPossible
 
 cesRowGen2022 :: FS.RowGen FS.DefaultStream 'FS.ColumnByName FCU.CommonColumns
 cesRowGen2022 = FS.modifyColumnSelector modF ccesRowGen2022AllCols where
@@ -145,7 +152,10 @@ ces2022CSV = dataDir ++ "CCES22_Common_OUTPUT_vv_topost.csv"
 commonCols :: Int -> Int -> S.Set FS.HeaderText
 commonCols yrSuffix congress =
   S.fromList (FS.HeaderText <$> ["caseid"
+                                , "commonweight"
                                 , "commonpostweight"
+                                , "vvweight"
+                                , "vvweight_post"
                                 , "inputstate"
                                 , "cdid" <> show congress
                                 , "gender"
@@ -167,6 +177,7 @@ catalistCols :: Int -> S.Set FS.HeaderText
 catalistCols yrSuffix =
   S.fromList (FS.HeaderText <$>
               [ "CL_voter_status" -- registration, Catalist
+--              , "CL_partyaffiliation"
               , "CL_20" <> show yrSuffix <> "gvm" -- how voted and thus turnout, Catalist
               ]
              )
@@ -176,6 +187,7 @@ catalistRenames clAsInt yrSuffix =
   let tSuffix = if clAsInt then "" else "T"
   in M.fromList
      [ (FS.HeaderText ("CL_20" <> show yrSuffix <> "gvm"), FS.ColTypeName $ "VTurnout" <> tSuffix)
+--     , (FS.HeaderText ("CL_voteraffiliation"), FS.ColTypeName $ "VRegParty" <> tSuffix)
      , (FS.HeaderText ("CL_voter_status"), FS.ColTypeName $ "VVoterStatus" <> tSuffix)
      ]
 
@@ -183,6 +195,7 @@ targetSmartCols :: Int -> S.Set FS.HeaderText
 targetSmartCols yrSuffix =
   S.fromList (FS.HeaderText <$>
               [ "TS_voterstatus" -- registration, TargetSmart
+--              , "TS_partyreg"
               , "TS_g20" <> show yrSuffix  -- how voted and thus turnout, TargetSmart
               ]
              )
@@ -192,13 +205,17 @@ targetSmartRenames clAsInt yrSuffix =
   let tSuffix = if clAsInt then "" else "T"
   in M.fromList
    [ (FS.HeaderText ("TS_g20" <> show yrSuffix), FS.ColTypeName $ "VTurnout" <> tSuffix)
+--   , (FS.HeaderText ("TS_partyreg"), FS.ColTypeName $ "VRegParty" <> tSuffix)
    , (FS.HeaderText ("TS_voterstatus"), FS.ColTypeName $ "VVoterStatus" <> tSuffix)
    ]
 
 commonRenames :: Int -> Int -> Map FS.HeaderText FS.ColTypeName
 commonRenames yrSuffix congress = M.fromList
      [ (FS.HeaderText "caseid", FS.ColTypeName "CaseId")
-     , (FS.HeaderText "commonpostweight", FS.ColTypeName "Weight")
+     , (FS.HeaderText "commonpostweight", FS.ColTypeName "PostWeight")
+     , (FS.HeaderText "commonweight", FS.ColTypeName "PreWeight")
+     , (FS.HeaderText "vvweight", FS.ColTypeName "VVPreWeight")
+     , (FS.HeaderText "vvweight_post", FS.ColTypeName "VVPostWeight")
      , (FS.HeaderText "inputstate", FS.ColTypeName "StateFips")
      , (FS.HeaderText ("cdid" <> show congress), FS.ColTypeName "CD")
      , (FS.HeaderText ("CC" <> show yrSuffix <> "_412"), FS.ColTypeName "HouseVote")
