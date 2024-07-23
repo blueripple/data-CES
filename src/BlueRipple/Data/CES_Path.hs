@@ -85,28 +85,28 @@ colsAndRenames CES2020 = baseColsAndRenames CES2020
 colsAndRenames CES2022 = f $ baseColsAndRenames CES2022 where
   f = unRenameHeader (FS.HeaderText "gender") (FS.HeaderText "gender4")
 
-
+-- The VV weights are missing for non-registered voters. So we parse those as Maybe in order to keep the rows
 setOrMissingVVWeights :: FS.RowGen s FS.ColumnByName a -> FS.RowGen s FS.ColumnByName a
 setOrMissingVVWeights = FS.setOrMissingWhen (FS.HeaderText "vvweight") FS.AlwaysPossible
-                        . FS.setOrMissingWhen (FS.HeaderText "vvweight") FS.AlwaysPossible
+                        . FS.setOrMissingWhen (FS.HeaderText "vvweight_post") FS.AlwaysPossible
 
 cesRowGen2022 :: FS.RowGen FS.DefaultStream 'FS.ColumnByName FCU.CommonColumns
-cesRowGen2022 = FS.modifyColumnSelector modF ccesRowGen2022AllCols where
+cesRowGen2022 = setOrMissingVVWeights $ FS.modifyColumnSelector modF ccesRowGen2022AllCols where
   (cols', renames') =  colsAndRenames CES2022
   modF = FS.renameSomeUsingNames renames' . FS.columnSubset cols'
 
 cesRowGen2020 :: FS.RowGen FS.DefaultStream 'FS.ColumnByName FCU.CommonColumns
-cesRowGen2020 = FS.modifyColumnSelector modF ccesRowGen2020AllCols where
+cesRowGen2020 = setOrMissingVVWeights $ FS.modifyColumnSelector modF ccesRowGen2020AllCols where
   (cols', renames') = colsAndRenames CES2020
   modF = FS.renameSomeUsingNames renames' . FS.columnSubset cols'
 
 cesRowGen2018 :: FS.RowGen FS.DefaultStream 'FS.ColumnByName FCU.CommonColumns
-cesRowGen2018 = FS.modifyColumnSelector modF ccesRowGen2018AllCols where
+cesRowGen2018 = setOrMissingVVWeights $ FS.modifyColumnSelector modF ccesRowGen2018AllCols where
   (cols', renames') = colsAndRenames CES2018
   modF = FS.renameSomeUsingNames renames' . FS.columnSubset cols'
 
 cesRowGen2016 :: FS.RowGen FS.DefaultStream 'FS.ColumnByName FCU.CommonColumns
-cesRowGen2016 = FS.modifyColumnSelector modF ccesRowGen2016AllCols where
+cesRowGen2016 = setOrMissingVVWeights $ FS.modifyColumnSelector modF ccesRowGen2016AllCols where
   (cols', renames') = colsAndRenames CES2016
   modF = FS.renameSomeUsingNames renames' . FS.columnSubset cols'
 
