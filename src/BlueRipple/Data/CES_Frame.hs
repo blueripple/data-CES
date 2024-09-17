@@ -41,12 +41,12 @@ import qualified Relude.Extra as Relude
 F.declareColumn "Date" ''FP.FrameDay
 
 --these columns are parsed wrong so we fix them before parsing
-FS.declarePrefixedColumn "hispanic" "CCES" ''Int
+FS.declarePrefixedColumn "hispanic" "CES" ''Int
 FS.declarePrefixedColumn "VVoterStatus" "CES" ''Int
 FS.declarePrefixedColumn "VRegParty" "CES" ''Int
 
 --FS.tableTypes' ccesRowGen2018
-FS.tableTypes' ccesRowGen2020C
+FS.tableTypes' cesRowGen2020C
 FS.tableTypes' cesRowGen2022
 FS.tableTypes' cesRowGen2020
 FS.tableTypes' cesRowGen2018

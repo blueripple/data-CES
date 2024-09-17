@@ -2,7 +2,8 @@ packages: ./
 jobs: 4
 with-compiler: ghc
 
-allow-newer: polysemy-zoo:ghc-prim, streamly-core
+allow-newer: base, ghc-prim, bytestring, time, primitive
+           , polysemy-zoo:ghc-prim, streamly-core
            , freer-simple:template-haskell
            , foldl-statistics:hashable, foldl-statistics:profunctors
            , cereal-time:time

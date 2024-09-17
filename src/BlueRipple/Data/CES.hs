@@ -30,7 +30,8 @@ import qualified BlueRipple.Data.Types.Modeling as MT
 import qualified BlueRipple.Data.CountFolds as BR
 import qualified BlueRipple.Data.LoadersCore as BR
 import qualified BlueRipple.Data.Small.Loaders as BR
-import           BlueRipple.Data.CES_Frame
+import           BlueRipple.Data.CES_Frame hiding (CES)
+import qualified BlueRipple.Data.CES_Frame as CES
 import qualified BlueRipple.Data.CachingCore as BR
 
 import           Control.Lens                   ((%~))
@@ -106,7 +107,7 @@ cesLoaderAll = do
   return $ ces_C
 
 -- rcast to remove any year-specific fields
-cesLoader :: (K.KnitEffects r, BR.CacheEffects r) => CESYear -> K.Sem r (K.ActionWithCacheTime r (F.FrameRec CESR))
+cesLoader :: (K.KnitEffects r, BR.CacheEffects r) => SurveyYear -> K.Sem r (K.ActionWithCacheTime r (F.FrameRec CESR))
 cesLoader cy = case cy of
     CES2022 -> fmap F.rcast <<$>> ces22Loader
     CES2020 -> fmap F.rcast <<$>> ces20Loader
@@ -365,46 +366,46 @@ missingPresVote = FM.maybeMono (MT.MaybeData Nothing) (MT.MaybeData . Just)
 missingEvangelicalToNo :: F.Rec (Maybe :. F.ElField) '[CESPewBornagain] -> F.Rec (Maybe :. F.ElField) '[CESPewBornagain]
 missingEvangelicalToNo = FM.fromMaybeMono 2
 
-ccesDataLoader :: (K.KnitEffects r, BR.CacheEffects r) => K.Sem r (K.ActionWithCacheTime r (F.FrameRec CCES_MRP))
+ccesDataLoader :: (K.KnitEffects r, BR.CacheEffects r) => K.Sem r (K.ActionWithCacheTime r (F.FrameRec CES_MRP))
 ccesDataLoader = K.wrapPrefix "ccesDataLoader" $ do
-  K.logLE K.Info "Loading/Building CCES data"
-  BR.cachedMaybeFrameLoader @(F.RecordColumns CCES) @CCES_MRP_Raw -- @CCES_MRP
-    (BR.LocalData $ toText cces2020C_CSV)
-    (Just cCESParser)
+  K.logLE K.Info "Loading/Building CES data"
+  BR.cachedMaybeFrameLoader @(F.RecordColumns CES.CES) @CES_MRP_Raw -- @CES_MRP
+    (BR.LocalData $ toText ces2020C_CSV)
+    (Just cESParser)
     Nothing
-    fixCCESRow
-    transformCCESRow
+    fixCESRow
+    transformCESRow
     Nothing
     "cces_2006_2020.bin"
 
-type CCES_MRP_Raw = '[ CCESYear
-                     , CCESCaseId
-                     , CCESWeight
-                     , CCESWeightCumulative
-                     , CCESSt
-                     , CCESDistUp
-                     , CCESGender
-                     , CCESAge
-                     , CCESEduc
-                     , CCESRace
-                     , CCESHispanic -- 1 for yes, 2 for no.  Missing is no. hispanic race + no = hispanic.  any race + yes = hispanic (?)
+type CES_MRP_Raw = '[ CESYear
+                     , CESCaseId
+                     , CESWeight
+                     , CESWeightCumulative
+                     , CESSt
+                     , CESDistUp
+                     , CESGender
+                     , CESAge
+                     , CESEduc
+                     , CESRace
+                     , CESHispanic -- 1 for yes, 2 for no.  Missing is no. hispanic race + no = hispanic.  any race + yes = hispanic (?)
 --                     , CESPewBornagain
-                     , CCESPid3
-                     , CCESPid7
-                     , CCESPid3Leaner
-                     , CCESVvRegstatus
-                     , CCESVvTurnoutGvm
-                     , CCESVotedRepParty
-                     , CCESVotedPres08
-                     , CCESVotedPres12
-                     , CCESVotedPres16
-                     , CCESVotedPres20
+                     , CESPid3
+                     , CESPid7
+                     , CESPid3Leaner
+                     , CESVvRegstatus
+                     , CESVvTurnoutGvm
+                     , CESVotedRepParty
+                     , CESVotedPres08
+                     , CESVotedPres12
+                     , CESVotedPres16
+                     , CESVotedPres20
                      ]
 
-type CCES_MRP = '[ BR.Year
-                 , CCESCaseId
-                 , CCESWeight
-                 , CCESWeightCumulative
+type CES_MRP = '[ BR.Year
+                 , CESCaseId
+                 , CESWeight
+                 , CESWeightCumulative
                  , BR.StateAbbreviation
                  , BR.CongressionalDistrict
                  , DT.SexC
@@ -650,23 +651,23 @@ type Pres2020VoteParty = "Pres2020VoteParty" F.:-> ET.PartyT
 
 
 -- to use in maybeRecsToFrame
-fixCCESRow :: F.Rec (Maybe F.:. F.ElField) CCES_MRP_Raw -> F.Rec (Maybe F.:. F.ElField) CCES_MRP_Raw
-fixCCESRow r = (F.rsubset %~ missingHispanicToNo)
+fixCESRow :: F.Rec (Maybe F.:. F.ElField) CES_MRP_Raw -> F.Rec (Maybe F.:. F.ElField) CES_MRP_Raw
+fixCESRow r = (F.rsubset %~ missingHispanicToNo)
 --               $ (F.rsubset %~ missingEvangelicalToNo)
                $ (F.rsubset %~ missingPID3)
                $ (F.rsubset %~ missingPID7)
                $ (F.rsubset %~ missingPIDLeaner)
                $ (F.rsubset %~ missingEducation)
                r where
---  missingHispanicToNo :: F.Rec (Maybe :. F.ElField) '[CCESHispanic] -> F.Rec (Maybe :. F.ElField) '[CCESHispanic]
+--  missingHispanicToNo :: F.Rec (Maybe :. F.ElField) '[CESHispanic] -> F.Rec (Maybe :. F.ElField) '[CESHispanic]
 --  missingHispanicToNo = FM.fromMaybeMono 2
---  missingPID3 :: F.Rec (Maybe :. F.ElField) '[CCESPid3] -> F.Rec (Maybe :. F.ElField) '[CCESPid3]
+--  missingPID3 :: F.Rec (Maybe :. F.ElField) '[CESPid3] -> F.Rec (Maybe :. F.ElField) '[CESPid3]
 --  missingPID3 = FM.fromMaybeMono 6
---  missingPID7 :: F.Rec (Maybe :. F.ElField) '[CCESPid7] -> F.Rec (Maybe :. F.ElField) '[CCESPid7]
+--  missingPID7 :: F.Rec (Maybe :. F.ElField) '[CESPid7] -> F.Rec (Maybe :. F.ElField) '[CESPid7]
 --  missingPID7 = FM.fromMaybeMono 9
-  missingPIDLeaner :: F.Rec (Maybe :. F.ElField) '[CCESPid3Leaner] -> F.Rec (Maybe :. F.ElField) '[CCESPid3Leaner]
+  missingPIDLeaner :: F.Rec (Maybe :. F.ElField) '[CESPid3Leaner] -> F.Rec (Maybe :. F.ElField) '[CESPid3Leaner]
   missingPIDLeaner = FM.fromMaybeMono 5
---  missingEducation :: F.Rec (Maybe :. F.ElField) '[CCESEduc] -> F.Rec (Maybe :. F.ElField) '[CCESEduc]
+--  missingEducation :: F.Rec (Maybe :. F.ElField) '[CESEduc] -> F.Rec (Maybe :. F.ElField) '[CESEduc]
 --  missingEducation = FM.fromMaybeMono 5
 
 intToEvangelical :: Int -> DT.Evangelical
@@ -678,37 +679,37 @@ intToEvangelical _ = DT.NonEvangelical
 
 -- fmap over Frame after load and throwing out bad rows
 
-transformCCESRow :: F.Record CCES_MRP_Raw -> F.Record CCES_MRP
-transformCCESRow = F.rcast . addCols where
-  addCols = (FT.addName  @CCESYear @BR.Year)
-            . (FT.addName @CCESSt @BR.StateAbbreviation)
-            . (FT.addName @CCESDistUp @BR.CongressionalDistrict)
-            . (FT.addOneFromOne @CCESGender @DT.SexC intToSex)
-            . (FT.addOneFromOne @CCESEduc @DT.EducationC intToEducation)
-            . (FT.addOneFromOne @CCESEduc @DT.CollegeGradC intToCollegeGrad)
-            . (FT.addOneFromOne @CCESRace @DT.Race5C (raceToRace5 . intToRaceT))
-            . (FT.addOneFromOne @CCESRace @DT.SimpleRaceC (raceToSimpleRace . intToRaceT))
-            . (FT.addOneFromOne @CCESHispanic @DT.HispC intToHisp)
-            . (FT.addOneFromOne @CCESAge @DT.Age5C intToAgeT)
-            . (FT.addOneFromOne @CCESAge @DT.SimpleAgeC intToSimpleAge)
+transformCESRow :: F.Record CES_MRP_Raw -> F.Record CES_MRP
+transformCESRow = F.rcast . addCols where
+  addCols = (FT.addName  @CESYear @BR.Year)
+            . (FT.addName @CESSt @BR.StateAbbreviation)
+            . (FT.addName @CESDistUp @BR.CongressionalDistrict)
+            . (FT.addOneFromOne @CESGender @DT.SexC intToSex)
+            . (FT.addOneFromOne @CESEduc @DT.EducationC intToEducation)
+            . (FT.addOneFromOne @CESEduc @DT.CollegeGradC intToCollegeGrad)
+            . (FT.addOneFromOne @CESRace @DT.Race5C (raceToRace5 . intToRaceT))
+            . (FT.addOneFromOne @CESRace @DT.SimpleRaceC (raceToSimpleRace . intToRaceT))
+            . (FT.addOneFromOne @CESHispanic @DT.HispC intToHisp)
+            . (FT.addOneFromOne @CESAge @DT.Age5C intToAgeT)
+            . (FT.addOneFromOne @CESAge @DT.SimpleAgeC intToSimpleAge)
 --            . (FT.addOneFromOne @CESPewBornagain @DT.EvangelicalC intToEvangelical)
-            . (FT.addOneFromOne @CCESVvRegstatus @Registration parseRegistration)
-            . (FT.addOneFromOne @CCESVvTurnoutGvm @Turnout parseTurnout)
-            . (FT.addOneFromOne @CCESVotedRepParty @HouseVoteParty parseHouseVoteParty)
-            . (FT.addOneFromOne @CCESVotedPres08 @Pres2008VoteParty parsePres2008VoteParty)
-            . (FT.addOneFromOne @CCESVotedPres12 @Pres2012VoteParty parsePres2012VoteParty)
-            . (FT.addOneFromOne @CCESVotedPres16 @Pres2016VoteParty parsePres2016VoteParty)
-            . (FT.addOneFromOne @CCESVotedPres20 @Pres2020VoteParty parsePres2016VoteParty)
-            . (FT.addOneFromOne @CCESPid3 @PartisanId3 parsePartisanIdentity3)
-            . (FT.addOneFromOne @CCESPid7 @PartisanId7 parsePartisanIdentity7)
-            . (FT.addOneFromOne @CCESPid3Leaner @PartisanIdLeaner parsePartisanIdentityLeaner)
+            . (FT.addOneFromOne @CESVvRegstatus @Registration parseRegistration)
+            . (FT.addOneFromOne @CESVvTurnoutGvm @Turnout parseTurnout)
+            . (FT.addOneFromOne @CESVotedRepParty @HouseVoteParty parseHouseVoteParty)
+            . (FT.addOneFromOne @CESVotedPres08 @Pres2008VoteParty parsePres2008VoteParty)
+            . (FT.addOneFromOne @CESVotedPres12 @Pres2012VoteParty parsePres2012VoteParty)
+            . (FT.addOneFromOne @CESVotedPres16 @Pres2016VoteParty parsePres2016VoteParty)
+            . (FT.addOneFromOne @CESVotedPres20 @Pres2020VoteParty parsePres2016VoteParty)
+            . (FT.addOneFromOne @CESPid3 @PartisanId3 parsePartisanIdentity3)
+            . (FT.addOneFromOne @CESPid7 @PartisanId7 parsePartisanIdentity7)
+            . (FT.addOneFromOne @CESPid3Leaner @PartisanIdLeaner parsePartisanIdentityLeaner)
 
 
 
 -- map reduce folds for counting
 
 -- some keys for aggregation
-type ByCCESPredictors = '[BR.StateAbbreviation, DT.SimpleAgeC, DT.SexC, DT.CollegeGradC, DT.SimpleRaceC]
+type ByCESPredictors = '[BR.StateAbbreviation, DT.SimpleAgeC, DT.SexC, DT.CollegeGradC, DT.SimpleRaceC]
 
 
 --
@@ -716,23 +717,23 @@ countDVotesF
   :: forall vc cs
   . (Ord (F.Record cs)
     , FI.RecVec (cs V.++ BR.CountCols)
-    , F.ElemOf CCES_MRP vc
+    , F.ElemOf CES_MRP vc
     , V.KnownField vc
     , V.Snd vc ~ ET.PartyT
     )
-  => (F.Record CCES_MRP -> F.Record cs)
+  => (F.Record CES_MRP -> F.Record cs)
   -> Int
-  -> FMR.Fold (F.Record CCES_MRP) (F.FrameRec (cs V.++ BR.CountCols))
+  -> FMR.Fold (F.Record CES_MRP) (F.FrameRec (cs V.++ BR.CountCols))
 countDVotesF getKeys y =
   BR.weightedCountFold
   getKeys
-  (F.rcast @[vc, CCESWeightCumulative])
+  (F.rcast @[vc, CESWeightCumulative])
   (\r ->
      (F.rgetField @BR.Year r == y)
      && (F.rgetField @vc r `elem` [ET.Republican, ET.Democratic])
   )
   ((== ET.Democratic) . F.rgetField @vc)
-  (F.rgetField @CCESWeightCumulative)
+  (F.rgetField @CESWeightCumulative)
 
 {-
 countDemHouseVotesF
@@ -742,7 +743,7 @@ countDemHouseVotesF
     )
   => Int
   -> FMR.Fold
-  (F.Record CCES_MRP)
+  (F.Record CES_MRP)
   (F.FrameRec (cs V.++ BR.CountCols))
 countDemHouseVotesF = countDVotesF @HouseVoteParty
 
@@ -752,7 +753,7 @@ countDemPres2008VotesF
     , FI.RecVec (cs V.++ BR.CountCols)
     )
   => FMR.Fold
-  (F.Record CCES_MRP)
+  (F.Record CES_MRP)
   (F.FrameRec (cs V.++ BR.CountCols))
 countDemPres2008VotesF = countDVotesF @Pres2008VoteParty 2008
 
@@ -760,17 +761,17 @@ countDemPres2012VotesF
   :: forall cs
   . (Ord (F.Record cs)
     , FI.RecVec (cs V.++ BR.CountCols)
-    , cs F.⊆ CCES_MRP
-    , cs F.⊆ ('[BR.StateAbbreviation] V.++ cs V.++ CCES_MRP)
-    , F.ElemOf (cs V.++ CCES_MRP) Pres2012VoteParty
-    , F.ElemOf (cs V.++ CCES_MRP) CCESWeightCumulative
+    , cs F.⊆ CES_MRP
+    , cs F.⊆ ('[BR.StateAbbreviation] V.++ cs V.++ CES_MRP)
+    , F.ElemOf (cs V.++ CES_MRP) Pres2012VoteParty
+    , F.ElemOf (cs V.++ CES_MRP) CESWeightCumulative
     )
   => FMR.Fold
-  (F.Record CCES_MRP)
+  (F.Record CES_MRP)
   (F.FrameRec ('[BR.StateAbbreviation] V.++ cs V.++ BR.CountCols))
 countDemPres2012VotesF =
-  BR.weightedCountFold @('[BR.StateAbbreviation] V.++ cs) @CCES_MRP
-    @'[Pres2012VoteParty, CCESWeightCumulative]
+  BR.weightedCountFold @('[BR.StateAbbreviation] V.++ cs) @CES_MRP
+    @'[Pres2012VoteParty, CESWeightCumulative]
     (\r ->
       (F.rgetField @BR.Year r == 2012)
         && (      F.rgetField @Pres2012VoteParty r
@@ -778,23 +779,23 @@ countDemPres2012VotesF =
            )
     )
     ((== ET.Democratic) . F.rgetField @Pres2012VoteParty)
-    (F.rgetField @CCESWeightCumulative)
+    (F.rgetField @CESWeightCumulative)
 
 countDemPres2016VotesF
   :: forall cs
   . (Ord (F.Record cs)
     , FI.RecVec (cs V.++ BR.CountCols)
-    , cs F.⊆ CCES_MRP
-    , cs F.⊆ ('[BR.StateAbbreviation] V.++ cs V.++ CCES_MRP)
-    , F.ElemOf (cs V.++ CCES_MRP) Pres2016VoteParty
-    , F.ElemOf (cs V.++ CCES_MRP) CCESWeightCumulative
+    , cs F.⊆ CES_MRP
+    , cs F.⊆ ('[BR.StateAbbreviation] V.++ cs V.++ CES_MRP)
+    , F.ElemOf (cs V.++ CES_MRP) Pres2016VoteParty
+    , F.ElemOf (cs V.++ CES_MRP) CESWeightCumulative
     )
   => FMR.Fold
-  (F.Record CCES_MRP)
+  (F.Record CES_MRP)
   (F.FrameRec ('[BR.StateAbbreviation] V.++ cs V.++ BR.CountCols))
 countDemPres2016VotesF =
-  BR.weightedCountFold @('[BR.StateAbbreviation] V.++ cs) @CCES_MRP
-    @'[Pres2016VoteParty, CCESWeightCumulative]
+  BR.weightedCountFold @('[BR.StateAbbreviation] V.++ cs) @CES_MRP
+    @'[Pres2016VoteParty, CESWeightCumulative]
     (\r ->
       (F.rgetField @BR.Year r == 2016)
         && (      F.rgetField @Pres2016VoteParty r
@@ -802,5 +803,5 @@ countDemPres2016VotesF =
            )
     )
     ((== ET.Democratic) . F.rgetField @Pres2016VoteParty)
-    (F.rgetField @CCESWeightCumulative)
+    (F.rgetField @CESWeightCumulative)
 -}
